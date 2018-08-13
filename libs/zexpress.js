@@ -1,16 +1,7 @@
-function createApplication() {
-  return {
-    get: function () {
-      console.log("express get Func");
-    },
-    listen: function (port, cb) {
-      var server = http.createServer(function (req, res) {
-        console.log('create Server...');
-      })
+const app = require("./application");
 
-      return server.listen(port, cb);
-    }
-  };
+function createApplication() {
+  return app;
 }
 
 exports = module.exports = createApplication;
