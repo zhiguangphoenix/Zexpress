@@ -1,7 +1,7 @@
 const app = require("./application");
 
 function createApplication() {
-  return app;
+  return new app();
 }
 
 exports = module.exports = createApplication;
