@@ -117,13 +117,6 @@ Router.prototype.route = function (path) {
   return route;
 }
 
-Router.prototype.get = function (path, fn) {
-  let route = this.route(path);
-  route.get(fn);
-
-  return this;
-};
-
 Router.prototype.handle = function (req, res) {
   let method = req.method;
   for (let i = 1, len = this.stack.length; i < len; i++) {
@@ -135,7 +128,7 @@ Router.prototype.handle = function (req, res) {
   // 没有匹配的就用默认的this.stack[0]的处理函数
   return this.stack[0].handle_request(req, res);
 }
-
+// 为router生成相应的http方法的处理函数
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
   Router.prototype[m] = function (path, fn) {

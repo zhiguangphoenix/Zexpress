@@ -26,7 +26,7 @@ Application.prototype.handle = function (req, res) {
 
   this._router.handle(req, res);
 }
-
+// 为application对象生成http方法的处理函数
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
 
