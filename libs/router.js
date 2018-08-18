@@ -54,8 +54,8 @@ Route.prototype.get = function (fn) {
   return this;
 }
 Route.prototype.dispatch = function (req, res) {
-  let self = this,
-      method = req.method.toLowerCase();
+
+  let method = req.method.toLowerCase();
 
   for(let i = 0,len = this.stack.length;i < len;i++) {
     if (method === this.stack[i].method) {
@@ -113,7 +113,6 @@ Router.prototype.route = function (path) {
 
   layer.route = route;
   this.stack.push(layer);
-
   return route;
 }
 
