@@ -18,19 +18,28 @@ let port = 9876;
 //   res.send('Zexpress ===> Delete');
 // })
 
-app._router
-  .route('/user')
-  .get(function (req, res) {
-    res.send('user ===> Get');
+// app._router
+//   .route('/user')
+//   .get(function (req, res, next) {
+//     res.send('user ===> Get');
+//   })
+//   .post(function (req, res) {
+//     res.send("user ===> Post");
+//   })
+//   .put(function (req, res) {
+//     res.send("user ===> Put");
+//   })
+
+app.get('/', function (req, res, next) {
+  next();
+})
+  .get('/', function (req, res, next) {
+    next(new Error('error'));
   })
-  .post(function (req, res) {
-    res.send("user ===> Post");
-  })
-  .put(function (req, res) {
-    res.send("user ===> Put");
-  })
+  .get('/', function (req, res) {
+    res.send('third');
+  });
 
 app.listen(port, function () {
-  
   console.log('app is listening at ' + port);
 })

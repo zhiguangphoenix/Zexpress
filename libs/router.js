@@ -12,11 +12,15 @@ function Layer(path, fn) {
   this.path = path;
 }
 
-Layer.prototype.handle_request = function (req, res) {
+Layer.prototype.handle_request = function (req, res, next) {
+  console.log("handle_request");
+  
   let fn = this.handle;
-
-  if (fn) {
-    fn(req, res);
+  
+  try {
+    fn(req, res, next);
+  } catch (error) {
+    next(error);
   }
 }
 
@@ -53,20 +57,61 @@ Route.prototype.get = function (fn) {
 
   return this;
 }
-Route.prototype.dispatch = function (req, res) {
+Route.prototype.dispatch = function (req, res, done) {
+  console.log("dispatch");
+  
+  let method = req.method.toLowerCase(),
+      index = 0,
+      stack = this.stack;
 
-  let method = req.method.toLowerCase();
+  function next(error) {
+    console.log("route next");
+    
+    // 跳过route
+    if (error && error === "route") {
+      return done();
+    }
 
-  for(let i = 0,len = this.stack.length;i < len;i++) {
-    if (method === this.stack[i].method) {
-      return this.stack[i].fn(req, res);
+    // 跳过整个路由系统
+    if (error && error === "router") {
+      return done(error);
+    }
+
+    // 越界
+    if (index >= stack.length) {
+      return done(error);
+    }
+
+    let routerItem = stack[index++];
+    if (method !== layer.method) {
+      return next(error);
+    }
+
+    if (error) {
+      // 主动报错
+      return done(error);
+    } else {
+      routerItem.handle(req, res, next);
     }
   }
+
+  next();
 }
 let RouteItem = function (method, fn) {
   this.method = method;
   this.fn = fn;
 }
+RouteItem.prototype.handle = function (req, res, next) {
+  let fn = this.fn;
+
+  try {
+    fn(req, res, next);
+  } catch (error) {
+    // 带着错误next
+    next(error);
+  }
+}
+
 
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
@@ -94,38 +139,48 @@ http.METHODS.forEach(m => {
 
 
 let Router = function () {
-  this.stack = [
-    new Layer(
-      "*",
-      function (req, res) {
-        res.writeHead(200, { "Content-Type": "text/plain" });
-        res.end("404");
-      }
-    )
-  ];
+  this.stack = [];
 };
 
 Router.prototype.route = function (path) {
   let route = new Route(path);
-  let layer = new Layer(path, function (req, res) {
-    route.dispatch(req, res);
-  })
+  let layer = new Layer(path, route.dispatch.bind(route))
 
   layer.route = route;
   this.stack.push(layer);
   return route;
 }
 
-Router.prototype.handle = function (req, res) {
-  let method = req.method;
-  for (let i = 1, len = this.stack.length; i < len; i++) {
-    let curLayer = this.stack[i];
-    if (curLayer.match(req.url) && curLayer.route && curLayer.route.has_method(method)) {
-      return this.stack[i].handle_request(req, res);
+Router.prototype.handle = function (req, res, done) {
+  let method = req.method,
+      index = 0,
+      stack = this.stack;
+
+  function next(error) {
+    console.log("router next");
+    
+    let layerError = (error === "route" ? null : error);
+
+    // 跳过路由系统
+    if (layerError === "router") {
+      return done(null);
+    }
+
+    if (index >= stack.length || layerError) {
+      return done(layerError);
+    }
+
+    let layer = stack[index++];
+    // 匹配，执行
+    if (layer.match(req.url) && layer.route && layer.route.has_method(method)) {
+      
+      return layer.handle_request(req, res, next);
+    } else {
+      next(layerError);
     }
   }
-  // 没有匹配的就用默认的this.stack[0]的处理函数
-  return this.stack[0].handle_request(req, res);
+
+  next();
 }
 // 为router生成相应的http方法的处理函数
 http.METHODS.forEach(m => {

@@ -24,7 +24,17 @@ Application.prototype.handle = function (req, res) {
     }
   }
 
-  this._router.handle(req, res);
+  let done = function finalhandler(error) {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+
+    if (error) {
+      res.send("404" + error);
+    } else {
+      let msg = "Cannot" + req.method + " " + req.url;
+      res.end(msg);
+    }
+  }
+  this._router.handle(req, res, done);
 }
 // 为application对象生成http方法的处理函数
 http.METHODS.forEach(m => {
