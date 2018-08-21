@@ -28,9 +28,9 @@ Application.prototype.handle = function (req, res) {
     res.writeHead(404, { "Content-Type": "text/plain" });
 
     if (error) {
-      res.send("404" + error);
+      res.send("404 " + error);
     } else {
-      let msg = "Cannot" + req.method + " " + req.url;
+      let msg = "Cannot " + req.method + " " + req.url;
       res.end(msg);
     }
   }
@@ -41,7 +41,9 @@ http.METHODS.forEach(m => {
   m = m.toLowerCase();
 
   Application.prototype[m] = function (path, fn) {
+    // app注册路由的本质：调用router对象上的HTTP方法注册路由
     this._router[m].apply(this._router, arguments);
+    
     return this;
   }
 })

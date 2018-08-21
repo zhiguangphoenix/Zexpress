@@ -32,6 +32,7 @@ Layer.prototype.match = function (path) {
   return false;
 }
 
+
 /**
  * 
  * Route类，与path对应，同一个path的不同method会加入Route.stack
@@ -45,18 +46,12 @@ let Route = function (path) {
 
   this.methods = {};
 }
+
 Route.prototype.has_method = function (method) {
   let name = method.toLowerCase();
   return Boolean(this.methods[name]);
 }
-Route.prototype.get = function (fn) {
-  let item = new RouteItem("get", fn);
 
-  this.methods["get"] = true;
-  this.stack.push(item);
-
-  return this;
-}
 Route.prototype.dispatch = function (req, res, done) {
   console.log("dispatch");
   
@@ -83,13 +78,14 @@ Route.prototype.dispatch = function (req, res, done) {
     }
 
     let routerItem = stack[index++];
-    if (method !== layer.method) {
+    if (method !== routerItem.method) {
       return next(error);
     }
 
     if (error) {
       // 主动报错
-      return done(error);
+      // return done(error);
+      routerItem.handle_error(error, req, res, next);
     } else {
       routerItem.handle(req, res, next);
     }
@@ -97,11 +93,15 @@ Route.prototype.dispatch = function (req, res, done) {
 
   next();
 }
+
 let RouteItem = function (method, fn) {
   this.method = method;
   this.fn = fn;
 }
+
 RouteItem.prototype.handle = function (req, res, next) {
+  console.log("routeItem handle");
+  
   let fn = this.fn;
 
   try {
@@ -109,6 +109,21 @@ RouteItem.prototype.handle = function (req, res, next) {
   } catch (error) {
     // 带着错误next
     next(error);
+  }
+}
+
+// 错误处理函数
+RouteItem.prototype.handle_error = function (error, req, res, next) {
+  let fn = this.hanlde;
+
+  if (fn.length !== 4) {
+    return next(error);
+  }
+
+  try {
+    fn(error, req, res, next);
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -158,7 +173,7 @@ Router.prototype.handle = function (req, res, done) {
 
   function next(error) {
     console.log("router next");
-    
+    // error是router的情况下，直接返回done
     let layerError = (error === "route" ? null : error);
 
     // 跳过路由系统
@@ -166,6 +181,7 @@ Router.prototype.handle = function (req, res, done) {
       return done(null);
     }
 
+    // router.stack里面的layer已经执行完了或者上一步传来了错误
     if (index >= stack.length || layerError) {
       return done(layerError);
     }
@@ -182,13 +198,17 @@ Router.prototype.handle = function (req, res, done) {
 
   next();
 }
+
 // 为router生成相应的http方法的处理函数
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
   Router.prototype[m] = function (path, fn) {
+    // router对象注册路由的本质：
+    //    根据req.path生成一个Layer，并且生成一个route挂载在Layer上，layer.route，然后layer进栈router.stack.push(layer)
+    //    根据req.method生成一个routeItem，且layer.stack.push(routeItem)
     let route = this.route(path);
     route[m].call(route, fn);
-
+    
     return this;
   }
 })
