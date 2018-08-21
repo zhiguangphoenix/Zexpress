@@ -155,6 +155,10 @@ http.METHODS.forEach(m => {
 
 let Router = function () {
   this.stack = [];
+
+  if (!(this instanceof Router)) {
+    return new Router();
+  }
 };
 
 Router.prototype.route = function (path) {
@@ -197,6 +201,25 @@ Router.prototype.handle = function (req, res, done) {
   }
 
   next();
+}
+
+// router的use，直接添加一个route为空的layer
+Router.prototype.use = function (fn) {
+  let path = "/";
+
+  if (typeof fn !== "function") {
+    path = fn;
+    fn = arguments[1];
+  }
+
+  let layer = new Layer(path, fn);
+  layer.route = undefined;
+
+  this.stack.push(layer);
+
+  console.log(this.stack);
+  
+  return this;
 }
 
 // 为router生成相应的http方法的处理函数

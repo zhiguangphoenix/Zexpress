@@ -36,6 +36,22 @@ Application.prototype.handle = function (req, res) {
   }
   this._router.handle(req, res, done);
 }
+
+// Application.use是代理了router.Method
+Application.prototype.use = function (fn) {
+  let path = "/",
+      router = this._router;
+
+  if (typeof fn !== "function") {
+    path = fn;
+    fn = arguments[1];
+  }
+
+  router.use(path, fn);
+
+  return this;
+}
+
 // 为application对象生成http方法的处理函数
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
@@ -48,4 +64,4 @@ http.METHODS.forEach(m => {
   }
 })
 
-module.exports = Application;
+exports = module.exports = Application;
