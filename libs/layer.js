@@ -30,4 +30,20 @@ Layer.prototype.match = function (path) {
   return false;
 }
 
+Layer.prototype.handle_error = function (error, req, res, next) {
+  console.log("handle_error");
+  
+  let fn = this.handle;
+
+  if (fn.length !== 4) {
+    return next(error);
+  }
+
+  try {
+    fn(error, req, res, next);
+  } catch (err) {    
+    next(err);
+  }
+}
+
 module.exports = Layer;
