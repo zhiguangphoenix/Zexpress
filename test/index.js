@@ -1,6 +1,7 @@
 const zexpress = require('../index');
 const app = zexpress();
 const router = zexpress.Router();
+const url = require('url');
 
 let port = 9876;
 // app.get('/zexpress', function (req, res) {
@@ -49,23 +50,34 @@ let port = 9876;
 // })
 
 app.use(function (req, res, next) {
-  console.log('Time：', Date.now());
+  // let exampleUrl = "https://nodejs.org/dist/latest-v8.x/docs/api/url.html#url_url_parse_urlstring_parsequerystring_slashesdenotehost";
+let exampleUrl = "https://nodejs.org";
+  let urlObj = url.parse(exampleUrl);
+  console.log(urlObj);
+  
   next();
 });
 
-app.get('/', function (req, res, next) {
-  res.send('first');
-});
+console.log(router);
 
 
-router.use(function (req, res, next) {
-  console.log('Time: ', Date.now());
-  next();
+// app.use('/', function (req, res, next) {
+//   res.send('first');
+// });
+
+
+// router.use(function (req, res, next) {
+//   console.log('Time: ', Date.now());
+//   next();
+// });
+
+router.use('/zhiguang', function (req, res, next) {
+  res.send('zhiguang');
 });
 
-router.use('/', function (req, res, next) {
-  res.send('second');
-});
+router.use('/daryl', function (req, res, next) {
+  res.send('daryl');
+})
 
 app.use('/user', router);
 

@@ -59,6 +59,7 @@ http.METHODS.forEach(m => {
   Application.prototype[m] = function (path, fn) {
     // app注册路由的本质：调用router对象上的HTTP方法注册路由
     this._router[m].apply(this._router, arguments);
+    console.log(this._router);
     
     return this;
   }

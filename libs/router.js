@@ -14,31 +14,72 @@ let proto = {};
 
 proto.handle = function (req, res, done) {
   let method = req.method,
-    index = 0,
-    stack = this.stack;
+      index = 0,
+      stack = this.stack;
+
+  let removed = "", slashAdded = false;
+
+  // 获取当前父路径
+  let parentUrl = req.baseUrl || "";
+  
+  // 保存父路径
+  req.baseUrl = parentUrl;
+
+  // 保存原始路径
+  req.originalUrl = req.originalUrl || req.url;
 
   function next(error) {
     console.log("router next");
     // error是router的情况下，直接返回done
     let layerError = (error === "route" ? null : error);
 
+    if (slashAdded) {
+      req.url = "";
+      slashAdded = false;
+    }
+
+    if (removed.length !== 0) {
+      req.baseUrl = parentUrl;
+      req.url = removed + req.url;
+      removed = "";
+    }
+
     // 跳过路由系统
     if (layerError === "router") {
       return done(null);
     }
-
+    
     // router.stack里面的layer已经执行完了或者上一步传来了错误
-    if (index >= stack.length || layerError) {
+    if (index >= stack.length) {
       return done(layerError);
     }
+
+    let path = require("url").parse(req.url).pathname;
 
     let layer = stack[index++];
     // 匹配，执行
     // URL匹配成功，说明可能是中间件或者路由
-    if (layer.match(req.url)) {
+    if (layer.match(path)) {
+      // 处理中间件
       if (!layer.route) {
-        // 处理中间件
-        layer.handle_request(req, res, next);
+        // 要移除的部分路径
+        removed = layer.path;
+
+        // 设置当前路径
+        req.url = req.url.substr(removed.length);
+        if (req.url === "") {
+          req.url = "/" + req.url;
+          slashAdded = true;
+        }
+
+        // 设置当前路径的父路径
+        req.baseUrl = parentUrl + removed;
+
+        if (layerError) {
+          layer.handle_error(layerError, req, res, next);
+        } else {
+          layer.handle_request(req, res, next);
+        }
       } else if (layer.route.has_method(method)) {
         // 处理路由
         layer.handle_request(req, res, next);
@@ -75,8 +116,6 @@ proto.use = function (fn) {
 
   this.stack.push(layer);
 
-  console.log(this.stack);
-
   return this;
 }
 
@@ -100,6 +139,7 @@ module.exports = function () {
     router.handle(req, res, next);
   }
 
+  // 等同于router.__proto__ = proto;
   Object.setPrototypeOf(router, proto);
 
   router.stack = [];
