@@ -1,5 +1,8 @@
 const http = require("http");
 const router = require("./router");
+let request = require("./request");
+let response = require("./response");
+
 
 function Application() {
   this._router = new router();
@@ -14,15 +17,8 @@ Application.prototype.listen = function (port, cb) {
 }
 
 Application.prototype.handle = function (req, res) {
-  if (!res.send) {
-    res.send = function (body) {
-      res.writeHead(200, {
-        "Content-Type": "text/plain"
-      });
-
-      res.end(body);
-    }
-  }
+  Object.setPrototypeOf(req, request);
+  Object.setPrototypeOf(res, response);
 
   let done = function finalhandler(error) {
     res.writeHead(404, { "Content-Type": "text/plain" });
@@ -59,7 +55,6 @@ http.METHODS.forEach(m => {
   Application.prototype[m] = function (path, fn) {
     // app注册路由的本质：调用router对象上的HTTP方法注册路由
     this._router[m].apply(this._router, arguments);
-    console.log(this._router);
     
     return this;
   }
