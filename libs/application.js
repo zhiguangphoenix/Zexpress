@@ -4,7 +4,19 @@ let request = require("./request");
 let response = require("./response");
 let middleware = require("../middleware/init");
 
-function Application() { }
+function Application() { 
+  this.settings = {};
+  this.engines = {};
+}
+
+Application.prototype.set = function (setting, val) {
+  if (arguments.length === 1) {
+    return this.settings[setting];
+  }
+
+  this.settings[setting] = val;
+  return this;
+}
 
 Application.prototype.listen = function (port, cb) {
   let server = http.createServer((req, res) => {
@@ -61,10 +73,22 @@ Application.prototype.lazyrouter = function () {
   }
 }
 
+Application.prototype.engine = function (ext, fn) {
+  let extension = ext[0] === "." ? ext : "." + ext;
+
+  this.engines[extension] = fn;
+
+  return this;
+}
+
 // 为application对象生成http方法的处理函数
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
   Application.prototype[m] = function (path, fn) {
+    // 重载app.get方法，对应app.set方法
+    if (m === "get" && arguments.length === 1) {
+      return this.settings(path);
+    }
     // 惰性生成router
     this.lazyrouter();
     let router = this._router;
