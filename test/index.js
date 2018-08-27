@@ -2,6 +2,8 @@ const zexpress = require('../index');
 const app = zexpress();
 const router = zexpress.Router();
 const url = require('url');
+const fs = require('fs');
+const path = require('path');
 
 let port = 9876;
 // app.get('/zexpress', function (req, res) {
@@ -49,17 +51,6 @@ let port = 9876;
 //   res.send("=>")  
 // })
 
-app.use(function (req, res, next) {
-  // let exampleUrl = "https://nodejs.org/dist/latest-v8.x/docs/api/url.html#url_url_parse_urlstring_parsequerystring_slashesdenotehost";
-let exampleUrl = "https://nodejs.org";
-  let urlObj = url.parse(exampleUrl);
-  console.log(urlObj);
-  
-  next();
-});
-
-console.log(router);
-
 
 // app.use('/', function (req, res, next) {
 //   res.send('first');
@@ -71,15 +62,39 @@ console.log(router);
 //   next();
 // });
 
-router.use('/zhiguang', function (req, res, next) {
-  res.send('zhiguang');
-});
+// router.use('/zhiguang', function (req, res, next) {
+//   res.send('zhiguang');
+// });
 
-router.use('/daryl', function (req, res, next) {
-  res.send('daryl');
+// router.use('/daryl', function (req, res, next) {
+//   res.send('daryl');
+// })
+
+// app.use('/user', router);
+
+app.engine('ztl', function (path, options, callback) {
+  fs.readFile(path, function (err, content) {
+    if (err) {
+      return callback(new Error(err));
+    }
+
+    let rendered = content.toString()
+      .replace("$title$", "<title>" + options.title + "</title>")
+      .replace("$name$", "<h1>" + options.name + "</h1>");
+
+    return callback(null, rendered);
+  })
 })
 
-app.use('/user', router);
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ztl");
+
+app.get("/", function (req, res, next) {
+  res.render("index", {
+    title: "ztl title",
+    name: "Daryl"
+  })
+})
 
 app.listen(port, function () {
   console.log('app is listening at ' + port);

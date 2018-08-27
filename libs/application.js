@@ -3,6 +3,7 @@ const router = require("./router");
 let request = require("./request");
 let response = require("./response");
 let middleware = require("../middleware/init");
+let View = require("./view");
 
 function Application() { 
   this.settings = {};
@@ -69,7 +70,7 @@ Application.prototype.lazyrouter = function () {
   if (!this._router) {
     this._router = new router();
 
-    this._router.use(middleware.init);
+    this._router.use(middleware.init(this));
   }
 }
 
@@ -81,13 +82,36 @@ Application.prototype.engine = function (ext, fn) {
   return this;
 }
 
+Application.prototype.render = function (name, options, callback) {
+  let done = callback;
+  let engines = this.engines;
+  let opts = options;
+
+  let view = new View(name, {
+    defaultEngine: this.get("view engine"),
+    root: this.get("views"),
+    engines: engines
+  });
+
+  if(!view.path) {
+    let err = new Error("Faield to lookup view " + name + " ");
+    return done(err);
+  }
+
+  try {
+    view.render(options, callback);
+  } catch (e) {
+    callback(e);
+  }
+}
+
 // 为application对象生成http方法的处理函数
 http.METHODS.forEach(m => {
   m = m.toLowerCase();
   Application.prototype[m] = function (path, fn) {
     // 重载app.get方法，对应app.set方法
     if (m === "get" && arguments.length === 1) {
-      return this.settings(path);
+      return this.settings[path];
     }
     // 惰性生成router
     this.lazyrouter();

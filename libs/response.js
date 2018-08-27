@@ -10,19 +10,22 @@ res.send = function (body) {
 }
 
 res.render = function (view, options, callback) {
-  let app = this.req.app;
+  console.log("res render");
+  
+  let req = this.req;
+  let app = req.app;
   let done = callback;
   let opts = options || {};
   let self = this;
 
-  done = done || (err, str) => {
+  done = done || ((err, str) => {
     if (err) {
       return req.next(err);
     }
 
     this.send(str);
-  }
-
+  })
+  
   app.render(view, opts, done);
 }
 
