@@ -29,25 +29,7 @@ function View(name, options) {
 }
 
 View.prototype.lookup = function (name) {
-    // let path;
-    // let roots = [].concat(this.root);
-
-    // for (let i = 0; i < roots.length && !path;i++) {
-    //     let root = roots[i];
-
-    //     let loc = resolve(root, name);
-    //     let dir = dirname(loc);
-    //     let file = basename(loc);
-
-    //     path = resolve(dir, file);
-    // }
-
-    // return path;
-    console.log("==========");
-    console.log(this.root);
-    console.log(name);
-    console.log("==========");
-
+    
     // 先实现的简单一点
     return resolve(this.root, name);
 }

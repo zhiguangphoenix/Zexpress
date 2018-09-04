@@ -77,6 +77,7 @@ Application.prototype.lazyrouter = function () {
 Application.prototype.engine = function (ext, fn) {
   let extension = ext[0] === "." ? ext : "." + ext;
 
+  // 注册模板引擎
   this.engines[extension] = fn;
 
   return this;
